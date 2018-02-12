@@ -16,7 +16,7 @@ defmodule Retryable.MixProject do
           "CHANGELOG.md": [title: "CHANGELOG"],
         ],
       ],
-      description: "Simple code retrying without metaprogramming",
+      description: "Simple code retrying without metaprogramming.",
       package: [
         licenses: ["Apache 2"],
         maintainers: ["Christopher J. Bottaro"],
