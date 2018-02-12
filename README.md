@@ -1,6 +1,6 @@
 # Retryable
 
-Simply retry code (in Elixir) without metaprogramming.
+Simple code retrying (in Elixir) without metaprogramming
 
 ```elixir
 Retryable.retryable [on: TimeoutError, sleep: 2, tries: 10], fn ->

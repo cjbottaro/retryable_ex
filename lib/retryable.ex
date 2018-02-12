@@ -1,6 +1,6 @@
 defmodule Retryable do
   @moduledoc """
-  Retry code with simple, intuitive options and no metaprogramming.
+  Simple code retrying without metaprogramming
 
   A simple example...
   ```elixir
