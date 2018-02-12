@@ -49,7 +49,9 @@ defmodule Retryable do
   @type on :: module | :error | [on]
 
   @typedoc """
-  Exception message(s) to retry.
+  Exception message(s) to retry on.
+
+  If message is a string, then substring matching is used.
   """
   @type message :: String.t | Regex.t | [message]
 
