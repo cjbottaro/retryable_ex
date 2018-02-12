@@ -14,6 +14,7 @@ See the full documentation at [https://hexdocs.pm/retryable_ex](https://hexdocs.
 
 * Simple (modeled after Ruby's retryable gem)
 * No metaprogramming
+* Importing does not clutter your namespace
 * User specified default configuration
 * User specified named configurations
 * Fully documented
