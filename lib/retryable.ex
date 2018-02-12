@@ -1,6 +1,6 @@
 defmodule Retryable do
   @moduledoc """
-  Retry code with simple, intuitive options. No metaprogramming.
+  Retry code with simple, intuitive options and no metaprogramming.
 
   A simple example...
   ```elixir
@@ -123,7 +123,7 @@ defmodule Retryable do
 
   Retry on error (notice we are wrapping with our own `:ok` or `:error`):
   ```elixir
-  retryable [on: :error], fn ->
+  result = retryable [on: :error], fn ->
     case something() do
       {:ok, _} = result -> {:ok, result} # Success, don't retry
       {:error, _} = result -> {:error, result} # Error, do retry
@@ -133,7 +133,7 @@ defmodule Retryable do
 
   Retry on error or exception:
   ```elixir
-  retryable [on: [:error, ArgumentError]], fn ->
+  result = retryable [on: [:error, ArgumentError]], fn ->
     case something() do
       {:ok, _} = result -> {:ok, result} # Success, don't retry
       {:error, _} = result -> {:error, result} # Error, do retry
