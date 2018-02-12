@@ -13,7 +13,7 @@ defmodule Retryable do
   ```elixir
   use Mix.Config
 
-  config :retryable, :defaults,
+  config :retryable_ex, :defaults,
     tries: 10,
     sleep: fn n -> :math.pow(2, n) end
   ```
@@ -22,7 +22,7 @@ defmodule Retryable do
   ```elixir
   use Mix.Config
 
-  config :retryable, :aws,
+  config :retryable_ex, :aws,
     message: ["timeout", ~r/throttling/i]
     tries: 5,
     sleep: 2
@@ -95,10 +95,10 @@ defmodule Retryable do
   ```elixir
   use Mix.Config
 
-  config :retryable, :defaults,
+  config :retryable_ex, :defaults,
     on: ArgumentError
 
-  config :retryable, :my_config,
+  config :retryable_ex, :my_config,
     tries: 10
 
   # Both these calls have the same effect.
@@ -236,12 +236,12 @@ defmodule Retryable do
   end
 
   defp config(:defaults) do
-    defaults = Application.get_env(:retryable, :defaults, [])
+    defaults = Application.get_env(:retryable_ex, :defaults, [])
     Keyword.merge(@defaults, defaults)
   end
 
   defp config(name) do
-    Application.get_env(:retryable, name, [])
+    Application.get_env(:retryable_ex, name, [])
   end
 
 end
