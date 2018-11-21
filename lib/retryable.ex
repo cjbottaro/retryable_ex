@@ -193,11 +193,14 @@ defmodule Retryable do
   end
 
   defp handle_error(value, %{error: false}, _, _), do: value
-  defp handle_error({:ok, value}, _, _, _), do: value
-  defp handle_error({:error, value}, %{tries: tries}, _, count) when tries == count, do: value
-  defp handle_error(_value, options, func, count) do
-    sleep(options, count)
-    retryable(options, func, count+1)
+  defp handle_error(value, %{tries: tries}, _, count) when tries == count, do: value
+  defp handle_error(value, options, func, count) do
+    if options.error.(value) do
+      sleep(options, count)
+      retryable(options, func, count+1)
+    else
+      value
+    end
   end
 
   defp handle_after(%{after: after_fn}, 0), do: after_fn.()
@@ -213,9 +216,27 @@ defmodule Retryable do
 
   defp normalize_options(options, :on) do
     on = List.wrap(options.on) |> Enum.uniq
+
+    # This is a little ugly.
+    # on: [ArgumentError]
+    # on: [ArgumentError, :error]
+    # on: [ArgumentError, {:error, func}]
+
+    {on, error_handlers} = Enum.split_with(on, fn
+      :error -> false
+      {:error, _} -> false
+      _ -> true
+    end)
+
+    error_handler = case error_handlers do
+      [] -> false
+      [:error] -> &default_on_error/1
+      [{:error, handler}] -> handler
+    end
+
     options
-      |> Map.put(:error, Enum.member?(on, :error))
-      |> Map.put(:on, List.delete(on, :error))
+      |> Map.put(:error, error_handler)
+      |> Map.put(:on, on)
   end
 
   defp normalize_options(options, :message) do
@@ -244,6 +265,10 @@ defmodule Retryable do
 
   defp config(name) do
     Application.get_env(:retryable_ex, name, [])
+  end
+
+  defp default_on_error(value) do
+    match?({:error, _reason}, value)
   end
 
 end
