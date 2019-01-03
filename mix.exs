@@ -36,7 +36,7 @@ defmodule Retryable.MixProject do
   defp deps do
     [
       {:mox, "~> 0.3", only: :test},
-      {:ex_doc, "~> 0.18", only: :dev},
+      {:ex_doc, "~> 0.19", only: :dev},
     ]
   end
 

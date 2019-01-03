@@ -72,11 +72,41 @@ defmodule RetryableTest do
 
   test "retries on :error" do
     FooMock
+      |> expect(:foo, fn -> :error end)
+      |> expect(:foo, fn -> {:ok, "success"} end)
+
+    assert {:ok, "success"} = retryable [on: :error], &FooMock.foo/0
+  end
+
+  test "retries on {:error, reason}" do
+    FooMock
       |> expect(:foo, fn -> {:error, "fail"} end)
       |> expect(:foo, fn -> {:ok, "success"} end)
 
     assert {:ok, "success"} = retryable [on: :error], &FooMock.foo/0
   end
+
+  test "retries on {:error, reason, extra}" do
+    FooMock
+      |> expect(:foo, fn -> {:error, "fail", "extra"} end)
+      |> expect(:foo, fn -> {:ok, "success"} end)
+
+    assert {:ok, "success"} = retryable [on: :error], &FooMock.foo/0
+  end
+
+  test "retries on {:failure, reason}" do
+    FooMock
+      |> expect(:foo, fn -> {:failure, "fail"} end)
+      |> expect(:foo, fn -> {:ok, "success"} end)
+
+    shape = fn
+      {:failure, _} -> true
+      _ -> false
+    end
+
+    assert {:ok, "success"} = retryable [on: {:error, shape}], &FooMock.foo/0
+  end
+
 
   test "gives up on :error" do
     FooMock
