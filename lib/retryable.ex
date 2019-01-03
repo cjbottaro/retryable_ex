@@ -112,10 +112,9 @@ defmodule Retryable do
 
   When you use the `[on: error]` option, the following return values will cause a retry:
   * `:error`
-  * `{:error, term}`
-  * `{:error, term1, term2, ...}`
-
-  In other words, `:error` or a tuple where the first element is `:error`.
+  * `{:error, reason}`
+  * `{:error, reason, ...}`
+  * i.e. any tuple where the first element is `:error`
 
   You can customize the shape that defines an error with a function:
   ```elixir
@@ -126,7 +125,13 @@ defmodule Retryable do
     {:failure, _reason} -> true
     _ -> false
   end
-  retryable([on: {:error, error_shape}], fn -> ... end)
+
+  retryable([on: {:error, error_shape}], fn ->
+    case SomeModue.some_function do
+      :failure = result -> result # Will cause retry
+      {:ok, value} = result -> result # Will not cause retry
+    end
+  end)
   ```
 
   ## Examples
