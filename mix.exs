@@ -4,7 +4,7 @@ defmodule Retryable.MixProject do
   def project do
     [
       app: :retryable_ex,
-      version: "1.0.0",
+      version: "2.0.0",
       elixir: ">= 1.4.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -36,7 +36,7 @@ defmodule Retryable.MixProject do
   defp deps do
     [
       {:mox, "~> 0.3", only: :test},
-      {:ex_doc, "~> 0.18", only: :dev},
+      {:ex_doc, "~> 0.19", only: :dev},
     ]
   end
 

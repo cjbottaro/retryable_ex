@@ -108,6 +108,32 @@ defmodule Retryable do
   retryable([on: ArgumentError, tries: 10], fn -> ... end)
   ```
 
+  ## On error
+
+  When you use the `[on: error]` option, the following return values will cause a retry:
+  * `:error`
+  * `{:error, reason}`
+  * `{:error, reason, ...}`
+  * i.e. any tuple where the first element is `:error`
+
+  You can customize the shape that defines an error with a function:
+  ```elixir
+  error_shape = fn
+    :error -> true
+    :failure -> true
+    {:error, _reason} -> true
+    {:failure, _reason} -> true
+    _ -> false
+  end
+
+  retryable([on: {:error, error_shape}], fn ->
+    case SomeModue.some_function do
+      :failure = result -> result # Will cause retry
+      {:ok, value} = result -> result # Will not cause retry
+    end
+  end)
+  ```
+
   ## Examples
 
   Retry on specific exception(s):
@@ -123,12 +149,12 @@ defmodule Retryable do
   retryable([message: ["foo", ~r/bar/]], fn -> ... end)
   ```
 
-  Retry on error (notice we are wrapping with our own `:ok` or `:error`):
+  Retry on error:
   ```elixir
   result = retryable [on: :error], fn ->
     case something() do
-      {:ok, _} = result -> {:ok, result} # Success, don't retry
-      {:error, _} = result -> {:error, result} # Error, do retry
+      {:ok, _} = result -> result # Success, don't retry
+      {:error, _} = result -> result # Error, do retry
     end
   end
   ```
@@ -172,20 +198,20 @@ defmodule Retryable do
     try do
       func.() |> handle_error(options, func, count)
     rescue
-      e -> handle_exception(e, options, func, count)
+      e -> handle_exception(e, System.stacktrace, options, func, count)
     after
       handle_after(options, count)
     end
   end
 
-  defp handle_exception(e, options, func, count) do
+  defp handle_exception(e, stacktrace, options, func, count) do
     cond do
       count == options[:tries] ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       !exception_match?(options, e) ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       !message_match?(options, e.message) ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       true ->
         sleep(options, count)
         retryable(options, func, count+1)
@@ -193,11 +219,14 @@ defmodule Retryable do
   end
 
   defp handle_error(value, %{error: false}, _, _), do: value
-  defp handle_error({:ok, value}, _, _, _), do: value
-  defp handle_error({:error, value}, %{tries: tries}, _, count) when tries == count, do: value
-  defp handle_error(_value, options, func, count) do
-    sleep(options, count)
-    retryable(options, func, count+1)
+  defp handle_error(value, %{tries: tries}, _, count) when tries == count, do: value
+  defp handle_error(value, options, func, count) do
+    if options.error.(value) do
+      sleep(options, count)
+      retryable(options, func, count+1)
+    else
+      value
+    end
   end
 
   defp handle_after(%{after: after_fn}, 0), do: after_fn.()
@@ -213,9 +242,27 @@ defmodule Retryable do
 
   defp normalize_options(options, :on) do
     on = List.wrap(options.on) |> Enum.uniq
+
+    # This is a little ugly.
+    # on: [ArgumentError]
+    # on: [ArgumentError, :error]
+    # on: [ArgumentError, {:error, func}]
+
+    {on, error_handlers} = Enum.split_with(on, fn
+      :error -> false
+      {:error, _} -> false
+      _ -> true
+    end)
+
+    error_handler = case error_handlers do
+      [] -> false
+      [:error] -> &default_on_error/1
+      [{:error, handler}] -> handler
+    end
+
     options
-      |> Map.put(:error, Enum.member?(on, :error))
-      |> Map.put(:on, List.delete(on, :error))
+      |> Map.put(:error, error_handler)
+      |> Map.put(:on, on)
   end
 
   defp normalize_options(options, :message) do
@@ -244,6 +291,14 @@ defmodule Retryable do
 
   defp config(name) do
     Application.get_env(:retryable_ex, name, [])
+  end
+
+  defp default_on_error(value) do
+    case value do
+      :error -> true
+      tuple when is_tuple(tuple) -> elem(tuple, 0) == :error
+      _ -> false
+    end
   end
 
 end
