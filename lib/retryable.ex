@@ -172,20 +172,20 @@ defmodule Retryable do
     try do
       func.() |> handle_error(options, func, count)
     rescue
-      e -> handle_exception(e, options, func, count)
+      e -> handle_exception(e, System.stacktrace, options, func, count)
     after
       handle_after(options, count)
     end
   end
 
-  defp handle_exception(e, options, func, count) do
+  defp handle_exception(e, stacktrace, options, func, count) do
     cond do
       count == options[:tries] ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       !exception_match?(options, e) ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       !message_match?(options, e.message) ->
-        reraise e, System.stacktrace
+        reraise e, stacktrace
       true ->
         sleep(options, count)
         retryable(options, func, count+1)
