@@ -210,7 +210,7 @@ defmodule Retryable do
         reraise e, stacktrace
       !exception_match?(options, e) ->
         reraise e, stacktrace
-      !message_match?(options, e.message) ->
+      !message_match?(options, e) ->
         reraise e, stacktrace
       true ->
         sleep(options, count)
@@ -276,11 +276,15 @@ defmodule Retryable do
 
   defp exception_match?(%{on: []}, _), do: true
   defp exception_match?(%{on: exceptions}, e) do
-    Enum.member?(exceptions, e.__struct__)
+    Enum.any? exceptions, fn
+      target when is_map(target) -> match?(^target, e)
+      target when is_atom(target) -> target == e.__struct__
+    end
   end
 
   defp message_match?(%{message: []}, _), do: true
-  defp message_match?(%{message: messages}, message) do
+  defp message_match?(%{message: messages}, e) do
+    message = Map.get(e, :message) # Some exceptions don't have a :message key
     Enum.any?(messages, &(message =~ &1))
   end
 
